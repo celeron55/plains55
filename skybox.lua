@@ -15,11 +15,16 @@ local VERTICAL_SCALE = 1.0
 
 -- Hardcoded day sky colors for gradient (adjust as needed; hex to RGB)
 local SKY_TOP_R, SKY_TOP_G, SKY_TOP_B = 97, 181, 245  -- #61b5f5
-local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 144, 211, 246  -- #90d3f6
+--local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 144, 211, 246  -- #90d3f6
+--local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 0xc8, 0xc8, 0xc8  -- #c8c8c8
+--local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 0xc8 - 150, 0xc8 - 120, 0xc8 - 50
+local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 0x42,0x70,0x96
 
 -- Constant silhouette color (light gray, almost white, for fog-like integration; adjust as needed)
 local CLOSE_R, CLOSE_G, CLOSE_B = HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B
 local FAR_R, FAR_G, FAR_B = SKY_TOP_R, SKY_TOP_G, SKY_TOP_B
+--local FAR_R, FAR_G, FAR_B = SKY_TOP_R + 20, SKY_TOP_G + 10, SKY_TOP_B + 20
+local FAR_R, FAR_G, FAR_B = 0xff, 0xff, 0xff
 
 -- Precompute 1x1 textures for top and bottom
 local top_color = 0xFF000000 + SKY_TOP_R * 0x10000 + SKY_TOP_G * 0x100 + SKY_TOP_B
@@ -70,7 +75,7 @@ local function generate_side_texture(pos, angle_base)
             local th = plains55.get_height_at(tx, tz, false)
 
             local delta_h = th - eye_y
-            if delta_h < 0 then delta_h = 0 end
+            --if delta_h < 0 then delta_h = 0 end
 
             local theta = math.atan(delta_h / dist)
             table.insert(samples, {dist = dist, theta = theta})
@@ -134,23 +139,38 @@ local function update_player_skybox(player, pos)
 
     player:set_sky({
         type = "skybox",
-        base_color = "#ffffff",
+        --base_color = "#ffffff",
+        base_color = "#427096",
         textures = textures,
         clouds = true,
         sky_color = {  -- Example base sky (adjust as needed)
-            day_sky = "#61b5f5",
-            day_horizon = "#90d3f6",
-            dawn_sky = "#b4bafa",
-            dawn_horizon = "#bac1f0",
-            night_sky = "#006aff",
-            night_horizon = "#4090ff",
-            indoors = "#646464",
-            fog_sun_tint = "#eeb672",
-            fog_moon_tint = "#eee9c9",
-            fog_tint_type = "default"
+            --day_sky = "#61b5f5",
+            --day_sky = "#427096",
+            --day_horizon = "#90d3f6",
+            day_sky = "#427096",
+            day_horizon = "#427096",
+            --dawn_sky = "#b4bafa",
+            --dawn_horizon = "#bac1f0",
+            dawn_sky = "#427096",
+            dawn_horizon = "#427096",
+            --night_sky = "#006aff",
+            --night_horizon = "#4090ff",
+            night_sky = "#427096",
+            night_horizon = "#427096",
+            --indoors = "#646464",
+            indoors = "#427096",
+            --fog_sun_tint = "#eeb672",
+            --fog_moon_tint = "#eee9c9",
+            fog_sun_tint = "#427096",
+            fog_moon_tint = "#427096",
+            --fog_tint_type = "default"
+            fog_tint_type = "custom"
         },
         fog = {
-            fog_color = "#c8c8c8",
+            --fog_color = "#c8c8c8",
+            --fog_distance = 500,
+            --fog_start = 0.666,
+            fog_color = "#427096",
         },
     })
     player:set_clouds({density = 0})  -- Ensure no clouds interfere
