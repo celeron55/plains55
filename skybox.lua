@@ -134,6 +134,10 @@ local function generate_side_texture(pos, angle_base)
 end
 
 -- Update the skybox for a player
+-- TODO: What we actually need is a way to set up textures to be drawn inside
+--       the skybox but behind the fog. Currently there is no API for that so we
+--       need to use the skybox. Many games use the skybox for other purposes
+--       and this won't work in that case.
 local function update_player_skybox(player, pos)
     local textures = {
         top_tex,  -- +Y (top)
