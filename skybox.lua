@@ -108,6 +108,12 @@ local function generate_side_texture(pos, angle_base)
                 current_max_py = draw_start_py
             end
         end
+
+        -- Fill below horizon with horizon color
+        for py = horizon_py, TEXTURE_HEIGHT do
+            local vi = (py - 1) * TEXTURE_WIDTH + px
+            pixels[vi] = 0xFF000000 + HORIZON_BOTTOM_R * 0x10000 + HORIZON_BOTTOM_G * 0x100 + HORIZON_BOTTOM_B
+        end
     end
 
     local png_data = minetest.encode_png(TEXTURE_WIDTH, TEXTURE_HEIGHT, pixels)
