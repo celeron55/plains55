@@ -30,7 +30,7 @@ local function generate_preview_texture(center_x, center_z)
     -- Encode PNG and base64
     local png_data = minetest.encode_png(preview_size, preview_size, pixels)
     local base64 = minetest.encode_base64(png_data)
-    return "[png:" .. base64 .. "]"
+    return "[png:" .. base64
 end
 
 -- Chat command to show preview

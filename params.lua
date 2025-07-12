@@ -115,7 +115,7 @@ plains55.noises.highland = {
 -- Theoretical amplitude sum for normalization
 plains55.sum_amp = (1 - math.pow(plains55.noises.terrain.persistence, plains55.noises.terrain.octaves)) / (1 - plains55.noises.terrain.persistence)  -- ~1.984375
 plains55.sum_amp_ridge = (1 - math.pow(plains55.noises.ridge.persistence, plains55.noises.ridge.octaves)) / (1 - plains55.noises.ridge.persistence)  -- ~2.176
-plains55.sum_amp_highland = (1 - math.pow(plains55.noises.highland.persistence, plains55.noises.highland.octaves)) / (1 - plains55.noises.highland.persistence)  -- Adjusted for octaves=6 ~2.5216
+plains55.sum_amp_highland = (1 - math.pow(plains55.noises.highland.persistence, plains55.noises.highland.octaves)) / (1 - plains55.noises.highland.persistence)  -- ~2.38336 (for octaves=6)
 
 -- Modular function to compute scaled height from noises
 function plains55.compute_scaled(norm, sea_floor_level, plains_height, plains_width, mountain_power, ridge_strength, ridge_noise, highland_height, highland_noise)

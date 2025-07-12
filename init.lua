@@ -7,3 +7,4 @@ local modpath = minetest.get_modpath(minetest.get_current_modname())
 dofile(modpath .. "/params.lua")  -- Loaded first as dependency
 dofile(modpath .. "/mapgen.lua")
 dofile(modpath .. "/preview.lua")
+dofile(modpath .. "/skybox.lua")
