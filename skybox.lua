@@ -6,12 +6,12 @@ local plains55 = dofile(modpath .. "/params.lua")
 local last_positions = {}
 
 local UPDATE_DISTANCE = 100  -- Update when player moves this far
-local TEXTURE_WIDTH = 256  -- Finer for better resolution
+local TEXTURE_WIDTH = 128
 local TEXTURE_HEIGHT = 128
-local SAMPLE_STEP = 100  -- Interval for sampling
-local MIN_SAMPLE_DISTANCE = 600
-local MAX_SAMPLE_DISTANCE = 10000  -- Farther max
-local VERTICAL_SCALE = 2.0  -- Set back to 2.0 as requested
+local SAMPLE_STEP = 50  -- Interval for sampling
+local MIN_SAMPLE_DISTANCE = 300
+local MAX_SAMPLE_DISTANCE = 4000
+local VERTICAL_SCALE = 1.0
 
 -- Hardcoded day sky colors for gradient (adjust as needed; hex to RGB)
 local SKY_TOP_R, SKY_TOP_G, SKY_TOP_B = 97, 181, 245  -- #61b5f5
@@ -28,7 +28,7 @@ local top_png = minetest.encode_png(1, 1, top_pixels)
 local top_base64 = minetest.encode_base64(top_png)
 local top_tex = "[png:" .. top_base64
 
-local bottom_color = 0xFF000000 + HORIZON_BOTTOM_R * 0x10000 + HORIZON_BOTTOM_G * 0x100 + HORIZON_BOTTOM_B
+local bottom_color = SILHOUETTE_COLOR
 local bottom_pixels = {bottom_color}
 local bottom_png = minetest.encode_png(1, 1, bottom_pixels)
 local bottom_base64 = minetest.encode_base64(bottom_png)
@@ -103,10 +103,10 @@ local function update_player_skybox(player, pos)
     local textures = {
         top_tex,  -- +Y (top)
         bottom_tex,  -- -Y (bottom)
-        generate_side_texture(pos, 90),  -- +Z (front/south)
-        generate_side_texture(pos, 270),  -- -Z (back/north)
-        generate_side_texture(pos, 0),  -- +X (right/east)
-        generate_side_texture(pos, 180)  -- -X (left/west)
+        generate_side_texture(pos, 0),   -- X+ (east)
+        generate_side_texture(pos, 180), -- X- (west)
+        generate_side_texture(pos, 270), -- Z- (south)
+        generate_side_texture(pos, 90),  -- Z+ (north)
     }
 
     player:set_sky({
@@ -124,7 +124,10 @@ local function update_player_skybox(player, pos)
             fog_sun_tint = "#eeb672",
             fog_moon_tint = "#eee9c9",
             fog_tint_type = "default"
-        }
+        },
+        fog = {
+            fog_color = "#c8c8c8",
+        },
     })
     player:set_clouds({density = 0})  -- Ensure no clouds interfere
 end
