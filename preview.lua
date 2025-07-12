@@ -5,8 +5,8 @@ local plains55 = dofile(modpath .. "/params.lua")
 
 -- Function to generate preview texture
 local function generate_preview_texture(center_x, center_z)
-    local preview_size = 512  -- Increased for more pixels
-    local world_scale = 16  -- Increased to cover more area (~4096x4096 nodes)
+    local preview_size = 512
+    local world_scale = 16 * plains55.HORIZONTAL_SCALE
     local half = preview_size / 2
 
     -- Compute pixels
@@ -14,7 +14,7 @@ local function generate_preview_texture(center_x, center_z)
     for py = 1, preview_size do
         for px = 1, preview_size do
             local world_x = center_x + (px - half - 0.5) * world_scale
-            local world_z = center_z + (half - py + 0.5) * world_scale  -- Flipped to correct vertical mirroring
+            local world_z = center_z + (half - py + 0.5) * world_scale
 
             -- Get height using unified function
             local height = plains55.get_height_at(world_x, world_z, false)
@@ -48,7 +48,7 @@ minetest.register_chatcommand("p55", {
 
         -- Calculate area covered
         local preview_size = 512
-        local world_scale = 16
+        local world_scale = 16 * plains55.HORIZONTAL_SCALE
         local half = (preview_size / 2) * world_scale
         local x_min = center_x - half
         local x_max = center_x + half

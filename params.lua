@@ -6,8 +6,8 @@ plains55.SEA_LEVEL = 0
 plains55.SAND_LEVEL = plains55.SEA_LEVEL + 2
 plains55.HEIGHT_MIN = -32
 plains55.RIDGE_SIZE = 0.4
-plains55.HEIGHT_SCALE = 1024
-plains55.HORIZONTAL_SCALE = 2.0
+plains55.HEIGHT_SCALE = 512
+plains55.HORIZONTAL_SCALE = 1.0
 plains55.ADD_OCTAVES = 0
 
 local F = plains55.HORIZONTAL_SCALE
@@ -244,10 +244,10 @@ end
 
 -- Content IDs (shared for mapgen)
 plains55.c_air = minetest.get_content_id("air")
-plains55.c_water = minetest.get_content_id("default:water_source")
-plains55.c_stone = minetest.get_content_id("default:stone")
-plains55.c_dirt = minetest.get_content_id("default:dirt")
-plains55.c_grass = minetest.get_content_id("default:dirt_with_grass")
-plains55.c_sand = minetest.get_content_id("default:sand")
+plains55.c_water = minetest.get_content_id("mapgen_water_source")
+plains55.c_stone = minetest.get_content_id("mapgen_stone")
+plains55.c_dirt = minetest.get_content_id("mapgen_dirt")
+plains55.c_grass = minetest.get_content_id("mapgen_dirt_with_grass")
+plains55.c_sand = minetest.get_content_id("mapgen_sand")
 
 return plains55
