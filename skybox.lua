@@ -18,10 +18,8 @@ local SKY_TOP_R, SKY_TOP_G, SKY_TOP_B = 97, 181, 245  -- #61b5f5
 local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 144, 211, 246  -- #90d3f6
 
 -- Constant silhouette color (light gray, almost white, for fog-like integration; adjust as needed)
-local CLOSE_R, CLOSE_G, CLOSE_B = 200, 200, 200  -- #C8C8C8
-local FAR_R, FAR_G, FAR_B = HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B
-
-local CLOSE_COLOR = 0xFF000000 + CLOSE_R * 0x10000 + CLOSE_G * 0x100 + CLOSE_B
+local CLOSE_R, CLOSE_G, CLOSE_B = HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B
+local FAR_R, FAR_G, FAR_B = SKY_TOP_R, SKY_TOP_G, SKY_TOP_B
 
 -- Precompute 1x1 textures for top and bottom
 local top_color = 0xFF000000 + SKY_TOP_R * 0x10000 + SKY_TOP_G * 0x100 + SKY_TOP_B
@@ -30,7 +28,7 @@ local top_png = minetest.encode_png(1, 1, top_pixels)
 local top_base64 = minetest.encode_base64(top_png)
 local top_tex = "[png:" .. top_base64
 
-local bottom_color = CLOSE_COLOR
+local bottom_color = 0xFF000000 + CLOSE_R * 0x10000 + CLOSE_G * 0x100 + CLOSE_B  -- Use close color for bottom
 local bottom_pixels = {bottom_color}
 local bottom_png = minetest.encode_png(1, 1, bottom_pixels)
 local bottom_base64 = minetest.encode_base64(bottom_png)
@@ -64,9 +62,8 @@ local function generate_side_texture(pos, angle_base)
         local dx = math.cos(angle_rad)
         local dz = math.sin(angle_rad)
 
-        -- Find the max theta and its dist (the min dist with that theta, as closest visible)
-        local max_theta = 0
-        local min_dist_for_max = MAX_SAMPLE_DISTANCE
+        -- Collect samples along the ray
+        local samples = {}
         for dist = MIN_SAMPLE_DISTANCE, MAX_SAMPLE_DISTANCE, SAMPLE_STEP do
             local tx = pos.x + dist * dx
             local tz = pos.z + dist * dz
@@ -76,35 +73,40 @@ local function generate_side_texture(pos, angle_base)
             if delta_h < 0 then delta_h = 0 end
 
             local theta = math.atan(delta_h / dist)
-            if theta > max_theta then
-                max_theta = theta
-                min_dist_for_max = dist
+            table.insert(samples, {dist = dist, theta = theta})
+        end
+
+        -- Sort samples by dist descending (far to near)
+        -- Don't do this; this makes it look wrong
+        --table.sort(samples, function(a, b) return a.dist > b.dist end)
+
+        -- Track current max py from previous (closer) layers
+        local current_max_py = horizon_py
+
+        -- Draw from far to near
+        for _, sample in ipairs(samples) do
+            local max_theta_py = horizon_py - math.floor((math.deg(sample.theta) / 90) * (TEXTURE_HEIGHT / 2) * VERTICAL_SCALE)
+            local draw_start_py = math.max(1, max_theta_py)
+
+            if draw_start_py < current_max_py then
+                -- Compute blend factor: far = close to far color, close = close color
+                local blend_frac = (sample.dist - MIN_SAMPLE_DISTANCE) / (MAX_SAMPLE_DISTANCE - MIN_SAMPLE_DISTANCE)
+                blend_frac = 1 - blend_frac  -- 1 for close, 0 for far
+
+                local layer_r = math.floor(CLOSE_R * blend_frac + FAR_R * (1 - blend_frac))
+                local layer_g = math.floor(CLOSE_G * blend_frac + FAR_G * (1 - blend_frac))
+                local layer_b = math.floor(CLOSE_B * blend_frac + FAR_B * (1 - blend_frac))
+                local layer_color = 0xFF000000 + layer_r * 0x10000 + layer_g * 0x100 + layer_b
+
+                -- Draw this layer's visible part (from draw_start_py to current_max_py - 1)
+                for py = draw_start_py, current_max_py - 1 do
+                    local vi = (py - 1) * TEXTURE_WIDTH + px
+                    pixels[vi] = layer_color
+                end
+
+                -- Update current max for next (closer) layer
+                current_max_py = draw_start_py
             end
-        end
-
-        -- Compute blend factor based on the dist of the visible peak
-        local blend_frac = (min_dist_for_max - MIN_SAMPLE_DISTANCE) / (MAX_SAMPLE_DISTANCE - MIN_SAMPLE_DISTANCE)
-
-        local layer_r = math.floor(CLOSE_R * (1 - blend_frac) + FAR_R * blend_frac)
-        local layer_g = math.floor(CLOSE_G * (1 - blend_frac) + FAR_G * blend_frac)
-        local layer_b = math.floor(CLOSE_B * (1 - blend_frac) + FAR_B * blend_frac)
-        local layer_color = 0xFF000000 + layer_r * 0x10000 + layer_g * 0x100 + layer_b
-
-        -- Compute the height py
-        local scaled_pixels = math.floor((math.deg(max_theta) / 90) * (TEXTURE_HEIGHT / 2) * VERTICAL_SCALE)
-        local sil_start_py = horizon_py - scaled_pixels
-        local draw_start_py = math.max(1, sil_start_py)
-
-        -- Fill from draw_start_py to horizon with the layer color
-        for py = draw_start_py, horizon_py do
-            local vi = (py - 1) * TEXTURE_WIDTH + px
-            pixels[vi] = layer_color
-        end
-
-        -- Fill below horizon with close color
-        for py = horizon_py + 1, TEXTURE_HEIGHT do
-            local vi = (py - 1) * TEXTURE_WIDTH + px
-            pixels[vi] = CLOSE_COLOR
         end
     end
 
