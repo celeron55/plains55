@@ -18,8 +18,10 @@ local SKY_TOP_R, SKY_TOP_G, SKY_TOP_B = 97, 181, 245  -- #61b5f5
 local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 144, 211, 246  -- #90d3f6
 
 -- Constant silhouette color (light gray, almost white, for fog-like integration; adjust as needed)
-local SILHOUETTE_R, SILHOUETTE_G, SILHOUETTE_B = 200, 200, 200  -- #C8C8C8
-local SILHOUETTE_COLOR = 0xFF000000 + SILHOUETTE_R * 0x10000 + SILHOUETTE_G * 0x100 + SILHOUETTE_B
+local CLOSE_R, CLOSE_G, CLOSE_B = 200, 200, 200  -- #C8C8C8
+local FAR_R, FAR_G, FAR_B = HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B
+
+local CLOSE_COLOR = 0xFF000000 + CLOSE_R * 0x10000 + CLOSE_G * 0x100 + CLOSE_B
 
 -- Precompute 1x1 textures for top and bottom
 local top_color = 0xFF000000 + SKY_TOP_R * 0x10000 + SKY_TOP_G * 0x100 + SKY_TOP_B
@@ -28,7 +30,7 @@ local top_png = minetest.encode_png(1, 1, top_pixels)
 local top_base64 = minetest.encode_base64(top_png)
 local top_tex = "[png:" .. top_base64
 
-local bottom_color = SILHOUETTE_COLOR
+local bottom_color = CLOSE_COLOR
 local bottom_pixels = {bottom_color}
 local bottom_png = minetest.encode_png(1, 1, bottom_pixels)
 local bottom_base64 = minetest.encode_base64(bottom_png)
@@ -40,8 +42,21 @@ local function generate_side_texture(pos, angle_base)
     local eye_y = pos.y + 1.625  -- Approximate player eye height
     local horizon_py = math.floor(TEXTURE_HEIGHT / 2)  -- Horizon at middle
 
-    -- Precompute silhouette start py (above horizon) for each column
-    local sil_starts = {}
+    -- Draw row by row (vertical gradient background first)
+    for py = 1, TEXTURE_HEIGHT do
+        -- Compute background gradient color for this row (full height gradient, top sky to bottom horizon)
+        local grad_frac = (py - 1) / (TEXTURE_HEIGHT - 1)  -- 0 at top, 1 at bottom
+        local bg_r = math.floor(SKY_TOP_R * (1 - grad_frac) + HORIZON_BOTTOM_R * grad_frac)
+        local bg_g = math.floor(SKY_TOP_G * (1 - grad_frac) + HORIZON_BOTTOM_G * grad_frac)
+        local bg_b = math.floor(SKY_TOP_B * (1 - grad_frac) + HORIZON_BOTTOM_B * grad_frac)
+        local bg_color = 0xFF000000 + bg_r * 0x10000 + bg_g * 0x100 + bg_b
+
+        for px = 1, TEXTURE_WIDTH do
+            table.insert(pixels, bg_color)
+        end
+    end
+
+    -- Now overlay the silhouette layers from far to near
     for px = 1, TEXTURE_WIDTH do
         local frac = 0.5 - (px - 0.5) / TEXTURE_WIDTH  -- Reversed to fix horizontal mirroring: now 0.5 to -0.5 as px increases
         local angle_deg = angle_base + frac * 90  -- Span 90 degrees per side, reversed direction
@@ -49,7 +64,9 @@ local function generate_side_texture(pos, angle_base)
         local dx = math.cos(angle_rad)
         local dz = math.sin(angle_rad)
 
+        -- Find the max theta and its dist (the min dist with that theta, as closest visible)
         local max_theta = 0
+        local min_dist_for_max = MAX_SAMPLE_DISTANCE
         for dist = MIN_SAMPLE_DISTANCE, MAX_SAMPLE_DISTANCE, SAMPLE_STEP do
             local tx = pos.x + dist * dx
             local tz = pos.z + dist * dz
@@ -61,32 +78,33 @@ local function generate_side_texture(pos, angle_base)
             local theta = math.atan(delta_h / dist)
             if theta > max_theta then
                 max_theta = theta
+                min_dist_for_max = dist
             end
         end
 
-        -- Compute scaled pixels above horizon
+        -- Compute blend factor based on the dist of the visible peak
+        local blend_frac = (min_dist_for_max - MIN_SAMPLE_DISTANCE) / (MAX_SAMPLE_DISTANCE - MIN_SAMPLE_DISTANCE)
+
+        local layer_r = math.floor(CLOSE_R * (1 - blend_frac) + FAR_R * blend_frac)
+        local layer_g = math.floor(CLOSE_G * (1 - blend_frac) + FAR_G * blend_frac)
+        local layer_b = math.floor(CLOSE_B * (1 - blend_frac) + FAR_B * blend_frac)
+        local layer_color = 0xFF000000 + layer_r * 0x10000 + layer_g * 0x100 + layer_b
+
+        -- Compute the height py
         local scaled_pixels = math.floor((math.deg(max_theta) / 90) * (TEXTURE_HEIGHT / 2) * VERTICAL_SCALE)
         local sil_start_py = horizon_py - scaled_pixels
-        sil_starts[px] = math.max(1, sil_start_py)
-    end
+        local draw_start_py = math.max(1, sil_start_py)
 
-    -- Draw row by row (vertical gradient and silhouette)
-    for py = 1, TEXTURE_HEIGHT do
-        -- Compute background gradient color for this row (full height gradient, top sky to bottom horizon)
-        local grad_frac = (py - 1) / (TEXTURE_HEIGHT - 1)  -- 0 at top, 1 at bottom
-        local bg_r = math.floor(SKY_TOP_R * (1 - grad_frac) + HORIZON_BOTTOM_R * grad_frac)
-        local bg_g = math.floor(SKY_TOP_G * (1 - grad_frac) + HORIZON_BOTTOM_G * grad_frac)
-        local bg_b = math.floor(SKY_TOP_B * (1 - grad_frac) + HORIZON_BOTTOM_B * grad_frac)
-        local bg_color = 0xFF000000 + bg_r * 0x10000 + bg_g * 0x100 + bg_b
+        -- Fill from draw_start_py to horizon with the layer color
+        for py = draw_start_py, horizon_py do
+            local vi = (py - 1) * TEXTURE_WIDTH + px
+            pixels[vi] = layer_color
+        end
 
-        for px = 1, TEXTURE_WIDTH do
-            if py >= sil_starts[px] then
-                -- Silhouette above horizon: constant color
-                table.insert(pixels, SILHOUETTE_COLOR)
-            else
-                -- Above silhouette: background
-                table.insert(pixels, bg_color)
-            end
+        -- Fill below horizon with close color
+        for py = horizon_py + 1, TEXTURE_HEIGHT do
+            local vi = (py - 1) * TEXTURE_WIDTH + px
+            pixels[vi] = CLOSE_COLOR
         end
     end
 
