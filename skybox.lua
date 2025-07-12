@@ -20,6 +20,8 @@ local SKY_TOP_R, SKY_TOP_G, SKY_TOP_B = 97, 181, 245  -- #61b5f5
 --local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 0xc8 - 150, 0xc8 - 120, 0xc8 - 50
 local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 0x42,0x70,0x96
 
+local SKY_BOTTOM_R, SKY_BOTTOM_G, SKY_BOTTOM_B = HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B
+
 -- Constant silhouette color (light gray, almost white, for fog-like integration; adjust as needed)
 local CLOSE_R, CLOSE_G, CLOSE_B = HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B
 --local FAR_R, FAR_G, FAR_B = SKY_TOP_R, SKY_TOP_G, SKY_TOP_B
@@ -51,9 +53,9 @@ local function generate_side_texture(pos, angle_base)
     for py = 1, TEXTURE_HEIGHT do
         -- Compute background gradient color for this row (full height gradient, top sky to bottom horizon)
         local grad_frac = (py - 1) / (TEXTURE_HEIGHT - 1)  -- 0 at top, 1 at bottom
-        local bg_r = math.floor(SKY_TOP_R * (1 - grad_frac) + HORIZON_BOTTOM_R * grad_frac)
-        local bg_g = math.floor(SKY_TOP_G * (1 - grad_frac) + HORIZON_BOTTOM_G * grad_frac)
-        local bg_b = math.floor(SKY_TOP_B * (1 - grad_frac) + HORIZON_BOTTOM_B * grad_frac)
+        local bg_r = math.floor(SKY_TOP_R * (1 - grad_frac) + SKY_BOTTOM_R * grad_frac)
+        local bg_g = math.floor(SKY_TOP_G * (1 - grad_frac) + SKY_BOTTOM_G * grad_frac)
+        local bg_b = math.floor(SKY_TOP_B * (1 - grad_frac) + SKY_BOTTOM_B * grad_frac)
         local bg_color = 0xFF000000 + bg_r * 0x10000 + bg_g * 0x100 + bg_b
 
         for px = 1, TEXTURE_WIDTH do
@@ -75,6 +77,7 @@ local function generate_side_texture(pos, angle_base)
             local tx = pos.x + dist * dx
             local tz = pos.z + dist * dz
             local th = plains55.get_height_at(tx, tz, false)
+            th = math.max(th, plains55.SEA_LEVEL)
 
             local delta_h = th - eye_y
             --if delta_h < 0 then delta_h = 0 end
@@ -186,7 +189,7 @@ local function update_player_skybox(player, pos)
     -- what we have to use
     player:set_clouds({
         height = plains55.HEIGHT_SCALE * 0.5,
-        thickness = 8,
+        --thickness = 8,
     })
 end
 
