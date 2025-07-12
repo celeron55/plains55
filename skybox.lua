@@ -5,12 +5,12 @@ local plains55 = dofile(modpath .. "/params.lua")
 
 local last_positions = {}
 
-local UPDATE_DISTANCE = 100  -- Update when player moves this far
-local TEXTURE_WIDTH = 128
-local TEXTURE_HEIGHT = 128
+local UPDATE_DISTANCE = 50  -- Update when player moves this far
+local TEXTURE_WIDTH = 64
+local TEXTURE_HEIGHT = 512
 local SAMPLE_STEP = 50  -- Interval for sampling
 local MIN_SAMPLE_DISTANCE = 300
-local MAX_SAMPLE_DISTANCE = 4000
+local MAX_SAMPLE_DISTANCE = 3000
 local VERTICAL_SCALE = 1.0
 
 -- Hardcoded day sky colors for gradient (adjust as needed; hex to RGB)
@@ -43,8 +43,8 @@ local function generate_side_texture(pos, angle_base)
     -- Precompute silhouette start py (above horizon) for each column
     local sil_starts = {}
     for px = 1, TEXTURE_WIDTH do
-        local frac = (px - 0.5) / TEXTURE_WIDTH - 0.5  -- -0.5 to 0.5
-        local angle_deg = angle_base + frac * 90  -- Span 90 degrees per side
+        local frac = 0.5 - (px - 0.5) / TEXTURE_WIDTH  -- Reversed to fix horizontal mirroring: now 0.5 to -0.5 as px increases
+        local angle_deg = angle_base + frac * 90  -- Span 90 degrees per side, reversed direction
         local angle_rad = math.rad(angle_deg)
         local dx = math.cos(angle_rad)
         local dz = math.sin(angle_rad)
@@ -80,11 +80,8 @@ local function generate_side_texture(pos, angle_base)
         local bg_color = 0xFF000000 + bg_r * 0x10000 + bg_g * 0x100 + bg_b
 
         for px = 1, TEXTURE_WIDTH do
-            if py >= sil_starts[px] and py <= horizon_py then
+            if py >= sil_starts[px] then
                 -- Silhouette above horizon: constant color
-                table.insert(pixels, SILHOUETTE_COLOR)
-            elseif py > horizon_py then
-                -- Below horizon: constant color for ground
                 table.insert(pixels, SILHOUETTE_COLOR)
             else
                 -- Above silhouette: background
@@ -111,8 +108,9 @@ local function update_player_skybox(player, pos)
 
     player:set_sky({
         type = "skybox",
+        base_color = "#ffffff",
         textures = textures,
-        clouds = false,  -- Disable clouds to avoid occlusion
+        clouds = true,
         sky_color = {  -- Example base sky (adjust as needed)
             day_sky = "#61b5f5",
             day_horizon = "#90d3f6",
