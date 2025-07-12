@@ -5,10 +5,10 @@ local plains55 = dofile(modpath .. "/params.lua")
 
 local last_positions = {}
 
-local UPDATE_DISTANCE = 50  -- Update when player moves this far
+local UPDATE_DISTANCE = 100  -- Update when player moves this far
 local TEXTURE_WIDTH = 64
 local TEXTURE_HEIGHT = 512
-local SAMPLE_STEP = 50  -- Interval for sampling
+local SAMPLE_STEP = 100  -- Interval for sampling
 local MIN_SAMPLE_DISTANCE = 300
 local MAX_SAMPLE_DISTANCE = 3000
 local VERTICAL_SCALE = 1.0
@@ -22,9 +22,11 @@ local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 0x42,0x70,0x96
 
 -- Constant silhouette color (light gray, almost white, for fog-like integration; adjust as needed)
 local CLOSE_R, CLOSE_G, CLOSE_B = HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B
-local FAR_R, FAR_G, FAR_B = SKY_TOP_R, SKY_TOP_G, SKY_TOP_B
+--local FAR_R, FAR_G, FAR_B = SKY_TOP_R, SKY_TOP_G, SKY_TOP_B
 --local FAR_R, FAR_G, FAR_B = SKY_TOP_R + 20, SKY_TOP_G + 10, SKY_TOP_B + 20
-local FAR_R, FAR_G, FAR_B = 0xff, 0xff, 0xff
+--local FAR_R, FAR_G, FAR_B = 0xff, 0xff, 0xff
+--local FAR_R, FAR_G, FAR_B = (SKY_TOP_R + 0xff) / 2, (SKY_TOP_G + 0xff) / 2, (SKY_TOP_B + 0xff) / 2
+local FAR_R, FAR_G, FAR_B = (SKY_TOP_R * 3 + 0xff) / 4, (SKY_TOP_G * 3 + 0xff) / 4, (SKY_TOP_B * 3 + 0xff) / 4
 
 -- Precompute 1x1 textures for top and bottom
 local top_color = 0xFF000000 + SKY_TOP_R * 0x10000 + SKY_TOP_G * 0x100 + SKY_TOP_B
@@ -86,7 +88,8 @@ local function generate_side_texture(pos, angle_base)
         --table.sort(samples, function(a, b) return a.dist > b.dist end)
 
         -- Track current max py from previous (closer) layers
-        local current_max_py = horizon_py
+        --local current_max_py = horizon_py
+        local current_max_py = horizon_py + TEXTURE_HEIGHT / 4
 
         -- Draw from far to near
         for _, sample in ipairs(samples) do
@@ -96,6 +99,7 @@ local function generate_side_texture(pos, angle_base)
             if draw_start_py < current_max_py then
                 -- Compute blend factor: far = close to far color, close = close color
                 local blend_frac = (sample.dist - MIN_SAMPLE_DISTANCE) / (MAX_SAMPLE_DISTANCE - MIN_SAMPLE_DISTANCE)
+                blend_frac = math.sqrt(blend_frac)
                 blend_frac = 1 - blend_frac  -- 1 for close, 0 for far
 
                 local layer_r = math.floor(CLOSE_R * blend_frac + FAR_R * (1 - blend_frac))
@@ -115,7 +119,7 @@ local function generate_side_texture(pos, angle_base)
         end
 
         -- Fill below horizon with horizon color
-        for py = horizon_py, TEXTURE_HEIGHT do
+        for py = horizon_py + TEXTURE_HEIGHT / 4, TEXTURE_HEIGHT do
             local vi = (py - 1) * TEXTURE_WIDTH + px
             pixels[vi] = 0xFF000000 + HORIZON_BOTTOM_R * 0x10000 + HORIZON_BOTTOM_G * 0x100 + HORIZON_BOTTOM_B
         end
@@ -144,25 +148,25 @@ local function update_player_skybox(player, pos)
         textures = textures,
         clouds = true,
         sky_color = {  -- Example base sky (adjust as needed)
-            --day_sky = "#61b5f5",
+            day_sky = "#61b5f5",
             --day_sky = "#427096",
             --day_horizon = "#90d3f6",
-            day_sky = "#427096",
+            --day_sky = "#427096",
             day_horizon = "#427096",
-            --dawn_sky = "#b4bafa",
+            dawn_sky = "#b4bafa",
             --dawn_horizon = "#bac1f0",
-            dawn_sky = "#427096",
+            --dawn_sky = "#427096",
             dawn_horizon = "#427096",
-            --night_sky = "#006aff",
+            night_sky = "#006aff",
             --night_horizon = "#4090ff",
-            night_sky = "#427096",
+            --night_sky = "#427096",
             night_horizon = "#427096",
-            --indoors = "#646464",
-            indoors = "#427096",
-            --fog_sun_tint = "#eeb672",
-            --fog_moon_tint = "#eee9c9",
-            fog_sun_tint = "#427096",
-            fog_moon_tint = "#427096",
+            indoors = "#646464",
+            --indoors = "#427096",
+            fog_sun_tint = "#eeb672",
+            fog_moon_tint = "#eee9c9",
+            --fog_sun_tint = "#427096",
+            --fog_moon_tint = "#427096",
             --fog_tint_type = "default"
             fog_tint_type = "custom"
         },
@@ -173,7 +177,17 @@ local function update_player_skybox(player, pos)
             fog_color = "#427096",
         },
     })
-    player:set_clouds({density = 0})  -- Ensure no clouds interfere
+    player:set_sun({
+        visible = true,
+        sunrise_visible = false, -- The sunrise doesn't look good with the skybox
+    })
+    -- Clouds use the same fog as the terrain which doesn't look very good as we
+    -- set an intermediate for color which comes before the horizon, but that's
+    -- what we have to use
+    player:set_clouds({
+        height = plains55.HEIGHT_SCALE * 0.5,
+        thickness = 8,
+    })
 end
 
 -- Global step to check for updates
