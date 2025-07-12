@@ -5,25 +5,29 @@ local plains55 = dofile(modpath .. "/params.lua")
 
 local last_positions = {}
 
-local UPDATE_DISTANCE = 100  -- Update when player moves this far
+local UPDATE_DISTANCE = 80  -- Update when player moves this far
 local TEXTURE_WIDTH = 64
 local TEXTURE_HEIGHT = 512
-local SAMPLE_STEP = 100  -- Interval for sampling
-local MIN_SAMPLE_DISTANCE = 300
-local MAX_SAMPLE_DISTANCE = 3000
-local VERTICAL_SCALE = 1.0
+local MIN_SAMPLE_DISTANCE = 200
+local MAX_SAMPLE_DISTANCE = 4000
+local SAMPLE_STEP_ADD = 30  -- Interval for sampling
+local SAMPLE_STEP_MULTIPLY = 1.1  -- Interval for sampling
+local VERTICAL_SCALE = 2.0  -- This seems to be accurate
 
--- Hardcoded day sky colors for gradient (adjust as needed; hex to RGB)
+-- Hardcoded day sky colors for gradient
 local SKY_TOP_R, SKY_TOP_G, SKY_TOP_B = 97, 181, 245  -- #61b5f5
 --local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 144, 211, 246  -- #90d3f6
 --local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 0xc8, 0xc8, 0xc8  -- #c8c8c8
 --local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 0xc8 - 150, 0xc8 - 120, 0xc8 - 50
 local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 0x42,0x70,0x96
+--local HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B = 0x06,0x48,0x82
 
 local SKY_BOTTOM_R, SKY_BOTTOM_G, SKY_BOTTOM_B = HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B
 
--- Constant silhouette color (light gray, almost white, for fog-like integration; adjust as needed)
+-- Silhouette color
 local CLOSE_R, CLOSE_G, CLOSE_B = HORIZON_BOTTOM_R, HORIZON_BOTTOM_G, HORIZON_BOTTOM_B
+--local CLOSE_R, CLOSE_G, CLOSE_B = HORIZON_BOTTOM_R - 60, HORIZON_BOTTOM_G - 40, HORIZON_BOTTOM_B - 20
+--local CLOSE_R, CLOSE_G, CLOSE_B = 0x06,0x48,0x82
 --local FAR_R, FAR_G, FAR_B = SKY_TOP_R, SKY_TOP_G, SKY_TOP_B
 --local FAR_R, FAR_G, FAR_B = SKY_TOP_R + 20, SKY_TOP_G + 10, SKY_TOP_B + 20
 --local FAR_R, FAR_G, FAR_B = 0xff, 0xff, 0xff
@@ -73,7 +77,8 @@ local function generate_side_texture(pos, angle_base)
 
         -- Collect samples along the ray
         local samples = {}
-        for dist = MIN_SAMPLE_DISTANCE, MAX_SAMPLE_DISTANCE, SAMPLE_STEP do
+        local dist = MIN_SAMPLE_DISTANCE
+        while dist <= MAX_SAMPLE_DISTANCE do
             local tx = pos.x + dist * dx
             local tz = pos.z + dist * dz
             local th = plains55.get_height_at(tx, tz, false)
@@ -84,6 +89,8 @@ local function generate_side_texture(pos, angle_base)
 
             local theta = math.atan(delta_h / dist)
             table.insert(samples, {dist = dist, theta = theta})
+
+            dist = dist * SAMPLE_STEP_MULTIPLY + SAMPLE_STEP_ADD
         end
 
         -- Sort samples by dist descending (far to near)
@@ -155,10 +162,10 @@ local function update_player_skybox(player, pos)
         textures = textures,
         clouds = true,
         sky_color = {  -- Example base sky (adjust as needed)
-            day_sky = "#61b5f5",
+            --day_sky = "#61b5f5",
             --day_sky = "#427096",
             --day_horizon = "#90d3f6",
-            --day_sky = "#427096",
+            day_sky = "#427096",
             day_horizon = "#427096",
             dawn_sky = "#b4bafa",
             --dawn_horizon = "#bac1f0",
@@ -182,6 +189,8 @@ local function update_player_skybox(player, pos)
             --fog_distance = 500,
             --fog_start = 0.666,
             fog_color = "#427096",
+            --fog_color = "#064882",
+            --fog_color = "#326086",
         },
     })
     player:set_sun({
