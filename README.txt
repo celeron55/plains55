@@ -3,6 +3,8 @@ plains55
 
 This Luanti mod is a mapgen and a skybox at the same time.
 
+To use it, select the singlenode mapgen and activate the mod.
+
 It works with at least Minetest Game.
 
 It does not work with games that set their own skyboxes.
