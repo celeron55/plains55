@@ -5,8 +5,9 @@ local plains55 = {}
 plains55.SEA_LEVEL = 0
 plains55.SAND_LEVEL = plains55.SEA_LEVEL + 2
 plains55.HEIGHT_MIN = -32
-plains55.RIDGE_SIZE = 0.4
-plains55.HEIGHT_SCALE = 512
+plains55.RIDGE_SIZE = 0.1
+plains55.HIGHLAND_HEIGHT = 0.2
+plains55.HEIGHT_SCALE = 1024
 plains55.HORIZONTAL_SCALE = 1.0
 plains55.ADD_OCTAVES = 0
 
@@ -50,10 +51,10 @@ plains55.noises.plains_height = {
 
 plains55.noises.plains_width = {
     offset = 0.2,
-    scale = 0.1,
-    spread = {x = 512 * F, y = 512 * F, z = 512 * F},
+    scale = 0.2,
+    spread = {x = 2048 * F, y = 2048 * F, z = 2048 * F},
     seed = 30,
-    octaves = 3 + plains55.ADD_OCTAVES,
+    octaves = 4 + plains55.ADD_OCTAVES,
     persistence = 0.5,
     lacunarity = 2.0,
     flags = ""
@@ -73,7 +74,7 @@ plains55.noises.mountain_power = {
 -- New noises for ridges
 plains55.noises.ridge_strength = {
     offset = 0,
-    scale = 0.3,
+    scale = 1.0,
     spread = {x = 1024 * F, y = 1024 * F, z = 1024 * F},
     seed = 50,
     octaves = 2 + plains55.ADD_OCTAVES,
@@ -96,7 +97,7 @@ plains55.noises.ridge = {
 -- New noise for highlands
 plains55.noises.highland_height = {
     offset = 0,
-    scale = 0.4,
+    scale = plains55.HIGHLAND_HEIGHT,
     spread = {x = 2048 * F, y = 2048 * F, z = 2048 * F},
     seed = 70,
     octaves = 2 + plains55.ADD_OCTAVES,
