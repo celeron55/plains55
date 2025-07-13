@@ -5,6 +5,10 @@ local plains55 = dofile(modpath .. "/params.lua")
 
 local last_positions = {}
 
+-- We can't get this from the engine reliably so update this to match your
+-- client config, in order to properly blend fog into skybox
+local CLIENT_FOG_END_DISTANCE = 400
+
 local UPDATE_DISTANCE = 80  -- Update when player moves this far
 local TEXTURE_WIDTH = 64
 local TEXTURE_HEIGHT = 512
@@ -108,7 +112,7 @@ local function generate_side_texture(pos, angle_base)
 
             if draw_start_py < current_max_py then
                 -- Compute blend factor: far = close to far color, close = close color
-                local blend_frac = (sample.dist - MIN_SAMPLE_DISTANCE) / (MAX_SAMPLE_DISTANCE - MIN_SAMPLE_DISTANCE)
+                local blend_frac = math.max(0, (sample.dist - CLIENT_FOG_END_DISTANCE) / (MAX_SAMPLE_DISTANCE - CLIENT_FOG_END_DISTANCE))
                 blend_frac = math.sqrt(blend_frac)
                 blend_frac = 1 - blend_frac  -- 1 for close, 0 for far
 
