@@ -99,7 +99,7 @@ local function generate_side_texture(pos, angle_base)
 
         -- Track current max py from previous (closer) layers
         --local current_max_py = horizon_py
-        local current_max_py = horizon_py + TEXTURE_HEIGHT / 4
+        local current_max_py = TEXTURE_HEIGHT
 
         -- Draw from far to near
         for _, sample in ipairs(samples) do
@@ -126,12 +126,6 @@ local function generate_side_texture(pos, angle_base)
                 -- Update current max for next (closer) layer
                 current_max_py = draw_start_py
             end
-        end
-
-        -- Fill below horizon with horizon color
-        for py = horizon_py + TEXTURE_HEIGHT / 4, TEXTURE_HEIGHT do
-            local vi = (py - 1) * TEXTURE_WIDTH + px
-            pixels[vi] = 0xFF000000 + HORIZON_BOTTOM_R * 0x10000 + HORIZON_BOTTOM_G * 0x100 + HORIZON_BOTTOM_B
         end
     end
 
