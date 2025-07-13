@@ -1,6 +1,9 @@
 plains55
 ========
 
+![Screenshot](./screenshot.png)
+![Screenshot for comparison](./screenshot_comparison.png)
+
 This Luanti mod is a mapgen and a skybox at the same time.
 
 To use it, select the singlenode mapgen and activate the mod.
