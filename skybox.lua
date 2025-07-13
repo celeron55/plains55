@@ -212,7 +212,8 @@ minetest.register_globalstep(function(dtime)
         local name = player:get_player_name()
         local pos = player:get_pos()
         local last_pos = last_positions[name] or pos
-        local dist = vector.distance({x = pos.x, y = 0, z = pos.z}, {x = last_pos.x, y = 0, z = last_pos.z})  -- Ignore Y for distance
+        -- Multiply Y to get faster updates when moving vertically
+        local dist = vector.distance({x = pos.x, y = pos.y * 2, z = pos.z}, {x = last_pos.x, y = last_pos.y * 2, z = last_pos.z})
 
         if dist > UPDATE_DISTANCE then
             update_player_skybox(player, pos)
